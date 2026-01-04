@@ -1,337 +1,213 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Lock, Eye, EyeOff, Chrome, ArrowRight, BookOpen, Shield, X, KeyRound, CheckCircle } from "lucide-react";
+import api from "../services/api";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import app from "../firebase";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Chrome,
+  ArrowRight,
+  BookOpen,
+  Shield,
+  X,
+  KeyRound,
+  CheckCircle,
+} from "lucide-react";
 import "../styles/Login.css";
 
+/* ================= Firebase Setup ================= */
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+/* ================= Component ================= */
 const Login = () => {
-  const [step, setStep] = useState("login"); 
+  const [step, setStep] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+
   const [verificationCode, setVerificationCode] = useState(["", "", "", "", "", ""]);
   const [resetCode, setResetCode] = useState(["", "", "", "", "", ""]);
+
   const [error, setError] = useState("");
-  const [generatedCode, setGeneratedCode] = useState(""); // Store --> generated verification code  
 
-  // Hide --> navbar 
+  /* ================= Effects ================= */
   useEffect(() => {
-    const navbar = document.querySelector('.navbar');
-    if (navbar) {
-      navbar.style.display = 'none';
-    }
-
+    const navbar = document.querySelector(".navbar");
+    if (navbar) navbar.style.display = "none";
     return () => {
-      if (navbar) {
-        navbar.style.display = 'block';
-      }
+      if (navbar) navbar.style.display = "block";
     };
   }, []);
 
-  // Create animated particles
   useEffect(() => {
-    const particles = document.querySelector('.login-particles');
+    const particles = document.querySelector(".login-particles");
     if (!particles) return;
-
     for (let i = 0; i < 20; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      particle.style.left = `${Math.random() * 100}%`;
-      particle.style.animationDelay = `${Math.random() * 20}s`;
-      particle.style.animationDuration = `${15 + Math.random() * 10}s`;
-      particles.appendChild(particle);
+      const p = document.createElement("div");
+      p.className = "particle";
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.animationDelay = `${Math.random() * 20}s`;
+      p.style.animationDuration = `${15 + Math.random() * 10}s`;
+      particles.appendChild(p);
     }
-
     return () => {
-      while (particles.firstChild) {
-        particles.removeChild(particles.firstChild);
-      }
+      while (particles.firstChild) particles.removeChild(particles.firstChild);
     };
   }, []);
 
-  const generateVerificationCode = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    return `G-${code}`;
-  };
+  /* ================= AUTH HANDLERS ================= */
 
+  // Firebase Google Login
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Google login initiated");
+      const result = await signInWithPopup(auth, googleProvider);
+      const token = await result.user.getIdToken();
+
+      const { data } = await api.post("/auth/google-login", { token });
+
+      alert(data.message || "OTP sent to your email");
+      setEmail(result.user.email);
       setStep("verify");
-    } catch (error) {
-      setError("Google login failed. Please try again.");
+    } catch (err) {
+      console.error(err);
+      setError("Google login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleEmailLogin = async () => {
-    if (!email || !password) {
-      setError("Please enter both email and password");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-    
+    if (!email || !password) return setError("Please enter both email and password");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Please enter a valid email");
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Email login:", email);
+      const { data } = await api.post("/auth/login", { email, password });
+      alert(data.message || "OTP sent to your email");
       setStep("verify");
-    } catch (error) {
-      setError("Login failed. Please check your credentials.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSignup = async () => {
-    if (!email || !password || !confirmPassword) {
-      setError("Please fill in all fields");
-      return;
+    if (!email || !password || !confirmPassword) return setError("Please fill in all fields");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Please enter a valid email");
+    if (password !== confirmPassword) return setError("Passwords do not match");
+    if (password.length < 8) return setError("Password must be at least 8 characters");
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
+      return setError("Password must contain uppercase, lowercase, and numbers");
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
-
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-      setError("Password must contain uppercase, lowercase, and numbers");
-      return;
-    }
-    
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Signup with email:", email);
+      const { data } = await api.post("/auth/signup", { email, password });
+      alert(data.message || "Signup successful! OTP sent");
       setStep("verify");
-    } catch (error) {
-      setError("Signup failed. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Signup failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setError("Please enter your email address");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
+    if (!email) return setError("Please enter your email");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Please enter a valid email");
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Generate verification code
-      const code = generateVerificationCode();
-      setGeneratedCode(code);
-      
-      console.log("Password reset code sent to:", email);
-      console.log("Generated code:", code); 
-      
-      alert(`📧 Password reset code sent!\n\nYour verification code is: ${code}\n\n(In production, this would be sent to your email)`);
-      
+      const { data } = await api.post("/auth/forgot-password", { email });
+      alert(data.message || "Reset code sent to email");
       setStep("reset-verify");
-    } catch (error) {
-      setError("Failed to send reset code. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send reset code");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleVerifyResetCode = async () => {
-    const enteredCode = resetCode.join("");
-    if (enteredCode.length !== 6) {
-      setError("Please enter all 6 digits");
-      return;
-    }
-
-    const fullCode = `G-${enteredCode}`;
-    
+    const otp = resetCode.join("");
+    if (otp.length !== 6) return setError("Please enter all 6 digits");
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Verify the code
-      if (fullCode !== generatedCode) {
-        throw new Error("Invalid code");
-      }
-      
-      console.log("Reset code verified:", fullCode);
+      await api.post("/auth/verify-reset-otp", { email, otp });
       setStep("reset-password");
-    } catch (error) {
-      setError("Invalid verification code. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid code");
       setResetCode(["", "", "", "", "", ""]);
-      const firstInput = document.getElementById('reset-code-input-0');
-      if (firstInput) firstInput.focus();
+      document.getElementById("reset-code-input-0")?.focus();
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword || !confirmNewPassword) {
-      setError("Please fill in all fields");
-      return;
+    if (!newPassword || !confirmNewPassword) return setError("Please fill in all fields");
+    if (newPassword !== confirmNewPassword) return setError("Passwords do not match");
+    if (newPassword.length < 8) return setError("Password must be at least 8 characters");
+    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      return setError("Password must contain uppercase, lowercase, and numbers");
     }
-
-    if (newPassword !== confirmNewPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
-
-    const hasUpperCase = /[A-Z]/.test(newPassword);
-    const hasLowerCase = /[a-z]/.test(newPassword);
-    const hasNumbers = /\d/.test(newPassword);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-      setError("Password must contain uppercase, lowercase, and numbers");
-      return;
-    }
-
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Password reset successful for:", email);
-      
-      alert("✅ Password reset successful! You can now login with your new password.");
-      
-      // Reset form --> Then --> go back to login
+      await api.post("/auth/reset-password", { email, password: newPassword });
+      alert("✅ Password reset successful!");
       setNewPassword("");
       setConfirmNewPassword("");
       setResetCode(["", "", "", "", "", ""]);
-      setGeneratedCode("");
       setStep("login");
-    } catch (error) {
-      setError("Failed to reset password. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to reset password");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerificationCodeChange = (index, value, isReset = false) => {
-    const codeArray = isReset ? resetCode : verificationCode;
-    const setCodeArray = isReset ? setResetCode : setVerificationCode;
-    const inputPrefix = isReset ? 'reset-code-input' : 'code-input';
-
-    if (value.length > 1) {
-      const pastedCode = value.slice(0, 6).split('');
-      const newCode = [...codeArray];
-      
-      pastedCode.forEach((char, i) => {
-        if (index + i < 6 && /^\d$/.test(char)) {
-          newCode[index + i] = char;
-        }
-      });
-      
-      setCodeArray(newCode);
-      
-      const nextIndex = Math.min(index + pastedCode.length, 5);
-      const nextInput = document.getElementById(`${inputPrefix}-${nextIndex}`);
-      if (nextInput) nextInput.focus();
-      
-      return;
-    }
-    
-    if (!/^\d*$/.test(value)) {
-      return;
-    }
-
-    const newCode = [...codeArray];
-    newCode[index] = value;
-    setCodeArray(newCode);
-
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`${inputPrefix}-${index + 1}`);
-      if (nextInput) nextInput.focus();
-    }
-  };
-
-  const handleVerificationCodeKeyDown = (index, e, isReset = false) => {
-    const codeArray = isReset ? resetCode : verificationCode;
-    const setCodeArray = isReset ? setResetCode : setVerificationCode;
-    const inputPrefix = isReset ? 'reset-code-input' : 'code-input';
-
-    if (e.key === "Backspace") {
-      if (!codeArray[index] && index > 0) {
-        const prevInput = document.getElementById(`${inputPrefix}-${index - 1}`);
-        if (prevInput) prevInput.focus();
-      } else {
-        const newCode = [...codeArray];
-        newCode[index] = "";
-        setCodeArray(newCode);
-      }
-    }
-  };
-
   const handleVerifyCode = async () => {
-    const code = verificationCode.join("");
-    if (code.length !== 6) {
-      setError("Please enter all 6 digits");
-      return;
-    }
-    
+    const otp = verificationCode.join("");
+    if (otp.length !== 6) return setError("Please enter all 6 digits");
+
     setIsLoading(true);
     setError("");
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Verification code:", code);
-      
-      alert("✅ Login successful! Redirecting to dashboard...");
-      
+      const { data } = await api.post("/auth/verify-otp", { email, otp });
+      alert(data.message || "✅ Login successful!");
       setTimeout(() => {
         window.location.href = "/dashboard";
       }, 1000);
-    } catch (error) {
-      setError("Invalid verification code. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid code");
       setVerificationCode(["", "", "", "", "", ""]);
-      const firstInput = document.getElementById('code-input-0');
-      if (firstInput) firstInput.focus();
+      document.getElementById("code-input-0")?.focus();
     } finally {
       setIsLoading(false);
     }
@@ -341,11 +217,10 @@ const Login = () => {
     setIsLoading(true);
     setError("");
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log("Resending code to:", email);
-      alert("📧 Verification code has been resent to your email!");
-    } catch (error) {
-      setError("Failed to resend code. Please try again.");
+      await api.post("/auth/resend-otp", { email });
+      alert("📧 Code resent!");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend code");
     } finally {
       setIsLoading(false);
     }
@@ -355,38 +230,67 @@ const Login = () => {
     setIsLoading(true);
     setError("");
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const code = generateVerificationCode();
-      setGeneratedCode(code);
-      
-      console.log("Reset code resent to:", email);
-      console.log("New code:", code);
-      
-      alert(`📧 New reset code sent!\n\nYour verification code is: ${code}\n\n(In production, this would be sent to your email)`);
-    } catch (error) {
-      setError("Failed to resend code. Please try again.");
+      await api.post("/auth/resend-reset-otp", { email });
+      alert("📧 New reset code sent!");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend code");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !isLoading) {
-      e.preventDefault();
-      if (step === "login") {
-        handleEmailLogin();
-      } else if (step === "signup") {
-        handleSignup();
-      } else if (step === "verify") {
-        handleVerifyCode();
-      } else if (step === "forgot-password") {
-        handleForgotPassword();
-      } else if (step === "reset-verify") {
-        handleVerifyResetCode();
-      } else if (step === "reset-password") {
-        handleResetPassword();
+  /* ================= UI HELPERS ================= */
+
+  const handleVerificationCodeChange = (idx, val, isReset = false) => {
+    const arr = isReset ? resetCode : verificationCode;
+    const setArr = isReset ? setResetCode : setVerificationCode;
+    const pfx = isReset ? "reset-code-input" : "code-input";
+
+    if (val.length > 1) {
+      const paste = val.slice(0, 6).split("");
+      const newArr = [...arr];
+      paste.forEach((c, i) => {
+        if (idx + i < 6 && /^\d$/.test(c)) newArr[idx + i] = c;
+      });
+      setArr(newArr);
+      document.getElementById(`${pfx}-${Math.min(idx + paste.length, 5)}`)?.focus();
+      return;
+    }
+
+    if (!/^\d*$/.test(val)) return;
+
+    const newArr = [...arr];
+    newArr[idx] = val;
+    setArr(newArr);
+
+    if (val && idx < 5) document.getElementById(`${pfx}-${idx + 1}`)?.focus();
+  };
+
+  const handleVerificationCodeKeyDown = (idx, e, isReset = false) => {
+    const arr = isReset ? resetCode : verificationCode;
+    const setArr = isReset ? setResetCode : setVerificationCode;
+    const pfx = isReset ? "reset-code-input" : "code-input";
+
+    if (e.key === "Backspace") {
+      if (!arr[idx] && idx > 0) {
+        document.getElementById(`${pfx}-${idx - 1}`)?.focus();
+      } else {
+        const newArr = [...arr];
+        newArr[idx] = "";
+        setArr(newArr);
       }
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !isLoading) {
+      e.preventDefault();
+      if (step === "login") handleEmailLogin();
+      else if (step === "signup") handleSignup();
+      else if (step === "verify") handleVerifyCode();
+      else if (step === "forgot-password") handleForgotPassword();
+      else if (step === "reset-verify") handleVerifyResetCode();
+      else if (step === "reset-password") handleResetPassword();
     }
   };
 
@@ -420,6 +324,26 @@ const Login = () => {
     setNewPassword("");
     setConfirmNewPassword("");
   };
+
+  const getPageTitle = () => {
+    if (step === "signup") return "Create Account";
+    if (step === "verify") return "Verify Your Account";
+    if (step === "forgot-password") return "Reset Password";
+    if (step === "reset-verify") return "Verify Reset Code";
+    if (step === "reset-password") return "Create New Password";
+    return "Welcome Back";
+  };
+
+  const getPageSubtitle = () => {
+    if (step === "signup") return "Join 10,000+ storytellers worldwide";
+    if (step === "verify") return "We've sent a code to your email";
+    if (step === "forgot-password") return "Enter your email to receive a reset code";
+    if (step === "reset-verify") return "Check your email for the reset code";
+    if (step === "reset-password") return "Choose a strong password";
+    return "Sign in to continue your journey";
+  };
+
+  /* ================= RENDER FUNCTIONS ================= */
 
   const renderLoginForm = () => (
     <>
@@ -613,7 +537,6 @@ const Login = () => {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="login-password-toggle"
-              aria-label={showPassword ? "Hide password" : "Show password"}
               disabled={isLoading}
             >
               {showPassword ? <EyeOff /> : <Eye />}
@@ -642,7 +565,6 @@ const Login = () => {
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="login-password-toggle"
-              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               disabled={isLoading}
             >
               {showConfirmPassword ? <EyeOff /> : <Eye />}
@@ -747,31 +669,27 @@ const Login = () => {
         </div>
         <h3 className="login-verify-title">Enter Reset Code</h3>
         <p className="login-verify-description">
-          Enter the 6-digit code from G-XXXXXX format
+          Enter the 6-digit code sent to your email
         </p>
         <p className="login-verify-email">{email}</p>
-        <div className="login-code-format-hint">
-          <p>Code format: <strong>G-123456</strong></p>
-          <p className="login-hint-text">Enter only the 6 digits after "G-"</p>
-        </div>
       </div>
 
       <div className="login-code-inputs">
-        {resetCode.map((digit, index) => (
+        {resetCode.map((d, i) => (
           <input
-            key={index}
-            id={`reset-code-input-${index}`}
+            key={i}
+            id={`reset-code-input-${i}`}
             type="text"
             inputMode="numeric"
             maxLength={6}
-            value={digit}
-            onChange={(e) => handleVerificationCodeChange(index, e.target.value, true)}
-            onKeyDown={(e) => handleVerificationCodeKeyDown(index, e, true)}
+            value={d}
+            onChange={(e) => handleVerificationCodeChange(i, e.target.value, true)}
+            onKeyDown={(e) => handleVerificationCodeKeyDown(i, e, true)}
             onKeyPress={handleKeyPress}
             className="login-code-input"
             autoComplete="off"
             disabled={isLoading}
-            autoFocus={index === 0}
+            autoFocus={i === 0}
           />
         ))}
       </div>
@@ -825,9 +743,7 @@ const Login = () => {
           <CheckCircle className="login-verify-icon" />
         </div>
         <h3 className="login-verify-title">Create New Password</h3>
-        <p className="login-verify-description">
-          Enter your new password below
-        </p>
+        <p className="login-verify-description">Enter your new password below</p>
       </div>
 
       <div className="login-form-section">
@@ -853,7 +769,6 @@ const Login = () => {
               type="button"
               onClick={() => setShowNewPassword(!showNewPassword)}
               className="login-password-toggle"
-              aria-label={showNewPassword ? "Hide password" : "Show password"}
               disabled={isLoading}
             >
               {showNewPassword ? <EyeOff /> : <Eye />}
@@ -882,7 +797,6 @@ const Login = () => {
               type="button"
               onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
               className="login-password-toggle"
-              aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
               disabled={isLoading}
             >
               {showConfirmNewPassword ? <EyeOff /> : <Eye />}
@@ -926,21 +840,21 @@ const Login = () => {
       </div>
 
       <div className="login-code-inputs">
-        {verificationCode.map((digit, index) => (
+        {verificationCode.map((d, i) => (
           <input
-            key={index}
-            id={`code-input-${index}`}
+            key={i}
+            id={`code-input-${i}`}
             type="text"
             inputMode="numeric"
             maxLength={6}
-            value={digit}
-            onChange={(e) => handleVerificationCodeChange(index, e.target.value, false)}
-            onKeyDown={(e) => handleVerificationCodeKeyDown(index, e, false)}
+            value={d}
+            onChange={(e) => handleVerificationCodeChange(i, e.target.value, false)}
+            onKeyDown={(e) => handleVerificationCodeKeyDown(i, e, false)}
             onKeyPress={handleKeyPress}
             className="login-code-input"
             autoComplete="off"
             disabled={isLoading}
-            autoFocus={index === 0}
+            autoFocus={i === 0}
           />
         ))}
       </div>
@@ -987,42 +901,17 @@ const Login = () => {
     </>
   );
 
-  const getPageTitle = () => {
-    switch(step) {
-      case "signup": return "Create Account";
-      case "verify": return "Verify Your Account";
-      case "forgot-password": return "Reset Password";
-      case "reset-verify": return "Verify Reset Code";
-      case "reset-password": return "Create New Password";
-      default: return "Welcome Back";
-    }
-  };
-
-  const getPageSubtitle = () => {
-    switch(step) {
-      case "signup": return "Join 10,000+ storytellers worldwide";
-      case "verify": return "We've sent a code to your email";
-      case "forgot-password": return "Enter your email to receive a reset code";
-      case "reset-verify": return "Check your email for the reset code";
-      case "reset-password": return "Choose a strong password";
-      default: return "Sign in to continue your journey";
-    }
-  };
-
+  /* ================= MAIN RENDER ================= */
   return (
     <div className="login-page">
-      {/* Background Effects */}
       <div className="login-bg-effects">
         <div className="login-bg-blur-1"></div>
         <div className="login-bg-blur-2"></div>
         <div className="login-bg-blur-3"></div>
       </div>
-
-      {/* Animated Particles */}
       <div className="login-particles"></div>
 
       <div className="login-container">
-        {/* Logo Section */}
         <div className="login-logo-section">
           <div className="login-logo-wrapper">
             <div className="login-logo-glow"></div>
@@ -1034,7 +923,6 @@ const Login = () => {
           <p className="login-subtitle">{getPageSubtitle()}</p>
         </div>
 
-        {/* Main Card */}
         <div className="login-card">
           {error && (
             <div className="login-error" role="alert">
@@ -1051,7 +939,6 @@ const Login = () => {
           {step === "reset-password" && renderResetPasswordForm()}
         </div>
 
-        {/* Security Note */}
         {!["verify", "reset-verify", "reset-password"].includes(step) && (
           <div className="login-security-note">
             <div className="login-security-content">
@@ -1059,17 +946,17 @@ const Login = () => {
               <div>
                 <p className="login-security-title">Your security is our priority</p>
                 <p className="login-security-text">
-                  We use industry-standard encryption and support 2-Step Verification to keep your account safe.
+                  We use industry-standard encryption and support 2-Step Verification to
+                  keep your account safe.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Terms */}
         <p className="login-terms">
           By continuing, you agree to our{" "}
-          <button 
+          <button
             className="login-terms-link"
             onClick={() => alert("Terms of Service")}
             type="button"
@@ -1077,7 +964,7 @@ const Login = () => {
             Terms of Service
           </button>{" "}
           and{" "}
-          <button 
+          <button
             className="login-terms-link"
             onClick={() => alert("Privacy Policy")}
             type="button"
