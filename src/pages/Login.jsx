@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import app from "../firebase";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 import {
   Mail,
   Lock,
@@ -17,11 +20,11 @@ import {
 } from "lucide-react";
 import "../styles/Login.css";
 
-/* ================= Firebase Setup ================= */
+/*  Firebase Setup */
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-/* ================= Component ================= */
+/* Component  */
 const Login = () => {
   const [step, setStep] = useState("login");
   const [email, setEmail] = useState("");
@@ -43,7 +46,7 @@ const Login = () => {
 
   const [error, setError] = useState("");
 
-  /* ================= Effects ================= */
+  /*  Effects */
   useEffect(() => {
     const navbar = document.querySelector(".navbar");
     if (navbar) navbar.style.display = "none";
@@ -68,7 +71,7 @@ const Login = () => {
     };
   }, []);
 
-  /* ================= AUTH HANDLERS ================= */
+  /*  AUTH HANDLERS  */
 
   // Firebase Google Login
   const handleGoogleLogin = async () => {
@@ -239,7 +242,7 @@ const Login = () => {
     }
   };
 
-  /* ================= UI HELPERS ================= */
+  /* UI HELPERS  */
 
   const handleVerificationCodeChange = (idx, val, isReset = false) => {
     const arr = isReset ? resetCode : verificationCode;
@@ -343,7 +346,7 @@ const Login = () => {
     return "Sign in to continue your journey";
   };
 
-  /* ================= RENDER FUNCTIONS ================= */
+  /*  RENDER FUNCTIONS  */
 
   const renderLoginForm = () => (
     <>
