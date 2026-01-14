@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Search, TrendingUp, Clock, Heart, Eye, ArrowRight, Sparkles, BookOpen, Users, Award, Star, Zap, Globe } from "lucide-react";
 import "../styles/Home.css";
+import blogService from "../services/blogService";
+import BlogCard from "../components/BlogCard";
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,13 +21,18 @@ function Home() {
   useEffect(() => {
     setIsVisible(true);
     fetchData();
-  }, []);
+  }, [selectedCategory, searchQuery]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Add your API calls here
+      const data = await blogService.getAllBlogs(selectedCategory, searchQuery);
+      setBlogs(data);
       setLoading(false);
+
+      // Update stats based on data (optional, or fetch from separate stats endpoint)
+      setStats(prev => ({ ...prev, totalStories: data.length }));
+
     } catch (error) {
       console.error("Error fetching data:", error);
       setLoading(false);
@@ -42,27 +49,27 @@ function Home() {
   ];
 
   const features = [
-    { 
-      title: "Express Yourself", 
-      desc: "Share your unique perspective with a global audience", 
+    {
+      title: "Express Yourself",
+      desc: "Share your unique perspective with a global audience",
       icon: Sparkles,
       gradient: "from-violet-500 to-purple-500"
     },
-    { 
-      title: "Build Community", 
-      desc: "Connect with like-minded readers and writers", 
+    {
+      title: "Build Community",
+      desc: "Connect with like-minded readers and writers",
       icon: Users,
       gradient: "from-blue-500 to-cyan-500"
     },
-    { 
-      title: "Grow Your Reach", 
-      desc: "Get discovered through our recommendation engine", 
+    {
+      title: "Grow Your Reach",
+      desc: "Get discovered through our recommendation engine",
       icon: TrendingUp,
       gradient: "from-emerald-500 to-teal-500"
     },
-    { 
-      title: "Earn Revenue", 
-      desc: "Monetize your content with our partner program", 
+    {
+      title: "Earn Revenue",
+      desc: "Monetize your content with our partner program",
       icon: Zap,
       gradient: "from-amber-500 to-orange-500"
     }
@@ -70,8 +77,6 @@ function Home() {
 
   return (
     <div className="home-container">
-      {/* Navbar */}
-
       {/* Hero Section */}
       <section className={`hero-section ${isVisible ? 'visible' : 'hidden'}`}>
         <div className="hero-container">
@@ -79,15 +84,15 @@ function Home() {
             <Sparkles className="w-4 h-4 text-indigo-600" />
             <span className="hero-badge-text">Welcome to BlogNest</span>
           </div>
-          
+
           <h1 className="hero-title">
             Discover Stories That
             <br />
             <span className="hero-title-gradient">Inspire & Transform</span>
           </h1>
-          
+
           <p className="hero-description">
-            Join a vibrant community of storytellers and readers. Share your voice, 
+            Join a vibrant community of storytellers and readers. Share your voice,
             explore diverse perspectives, and connect through powerful narratives.
           </p>
 
@@ -109,14 +114,14 @@ function Home() {
           </div>
 
           <div className="hero-buttons">
-            <button 
+            <button
               onClick={() => window.location.href = '/add-blog'}
               className="btn-primary"
             >
               Start Writing
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button 
+            <button
               onClick={() => window.location.href = '/all-blogs'}
               className="btn-secondary"
             >
@@ -176,7 +181,7 @@ function Home() {
                 <p className="featured-subtitle">Handpicked stories from our community</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => window.location.href = '/all-blogs'}
               className="view-all-btn"
             >
@@ -196,7 +201,7 @@ function Home() {
                 <BookOpen className="empty-state-icon" />
                 <h3 className="empty-state-title">No Stories Yet</h3>
                 <p className="empty-state-text">Be the first to share your amazing story with our community!</p>
-                <button 
+                <button
                   onClick={() => window.location.href = '/add-blog'}
                   className="btn-primary"
                 >
@@ -208,65 +213,7 @@ function Home() {
           ) : (
             <div className="blog-grid">
               {blogs.map((blog) => (
-                <article key={blog.id} className="blog-card">
-                  <div className="blog-image-wrapper">
-                    <img 
-                      src={blog.image || 'https://via.placeholder.com/800x600?text=Blog+Image'} 
-                      alt={blog.title}
-                      className="blog-image"
-                    />
-                    <div className="blog-image-overlay"></div>
-                    {blog.category && (
-                      <div className="blog-category-badge">
-                        <span className="blog-category-text">{blog.category}</span>
-                      </div>
-                    )}
-                    <div className="blog-like-btn">
-                      <Heart className="w-5 h-5 text-rose-500" />
-                    </div>
-                  </div>
-
-                  <div className="blog-content">
-                    <div className="blog-author">
-                      <img 
-                        src={blog.authorAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'} 
-                        alt={blog.author || 'Author'} 
-                        className="blog-author-avatar" 
-                      />
-                      <div className="blog-author-info">
-                        <p className="blog-author-name">{blog.author || 'Anonymous'}</p>
-                        <p className="blog-author-date">{blog.date || 'Just now'}</p>
-                      </div>
-                    </div>
-
-                    <h3 className="blog-title">{blog.title}</h3>
-                    
-                    <p className="blog-excerpt">{blog.excerpt || blog.content}</p>
-
-                    <div className="blog-meta">
-                      <div className="blog-meta-left">
-                        {blog.readTime && (
-                          <span className="blog-meta-item">
-                            <Clock className="w-4 h-4" />
-                            {blog.readTime}
-                          </span>
-                        )}
-                        {blog.views !== undefined && (
-                          <span className="blog-meta-item">
-                            <Eye className="w-4 h-4" />
-                            {blog.views}
-                          </span>
-                        )}
-                      </div>
-                      {blog.likes !== undefined && (
-                        <span className="blog-likes">
-                          <Heart className="w-4 h-4 fill-current" />
-                          {blog.likes}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </article>
+                <BlogCard key={blog._id} blog={blog} />
               ))}
             </div>
           )}
@@ -313,7 +260,7 @@ function Home() {
                           <span className="trending-item-count">{topic.count} posts</span>
                         </div>
                         <div className="trending-progress-bg">
-                          <div 
+                          <div
                             className="trending-progress-bar"
                             style={{ width: `${(topic.count / trendingTopics[0].count) * 100}%` }}
                           ></div>
@@ -336,14 +283,14 @@ function Home() {
             <div className="cta-content">
               <div className="cta-decoration-1"></div>
               <div className="cta-decoration-2"></div>
-              
+
               <div className="cta-inner">
                 <Globe className="cta-icon" />
                 <h2 className="cta-title">Ready to Share Your Story?</h2>
                 <p className="cta-text">
                   Join thousands of writers who are already sharing their voices and making an impact on BlogNest
                 </p>
-                <button 
+                <button
                   onClick={() => window.location.href = '/add-blog'}
                   className="cta-button"
                 >

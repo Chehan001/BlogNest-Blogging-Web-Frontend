@@ -203,9 +203,19 @@ const Login = () => {
 
     try {
       const { data } = await api.post("/auth/verify-otp", { email, otp });
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        // Put user in context if needed, though AuthContext reads from localStorage 'user'
+        // We should probably update 'user' in localStorage too if the backend returns it
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+      }
+
       alert(data.message || "✅ Login successful!");
       setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = "/"; // Redirect to Home instead of dashboard
       }, 1000);
     } catch (err) {
       setError(err.response?.data?.message || "Invalid code");
@@ -904,7 +914,7 @@ const Login = () => {
     </>
   );
 
-  /* ================= MAIN RENDER ================= */
+  /*  MAIN RENDER */
   return (
     <div className="login-page">
       <div className="login-bg-effects">
