@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
@@ -20,16 +21,18 @@ import {
 } from "lucide-react";
 import "../styles/Login.css";
 
-/*  Firebase Setup */
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-/* Component  */
 const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [step, setStep] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
@@ -46,7 +49,7 @@ const Login = () => {
 
   const [error, setError] = useState("");
 
-  /*  Effects */
+  // Hide navbar
   useEffect(() => {
     const navbar = document.querySelector(".navbar");
     if (navbar) navbar.style.display = "none";
@@ -55,6 +58,7 @@ const Login = () => {
     };
   }, []);
 
+  // Particle effect
   useEffect(() => {
     const particles = document.querySelector(".login-particles");
     if (!particles) return;
@@ -71,9 +75,9 @@ const Login = () => {
     };
   }, []);
 
-  /*  AUTH HANDLERS  */
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-  // Firebase Google Login
+  // ✅ Google login
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError("");
@@ -89,15 +93,17 @@ const Login = () => {
       setStep("verify");
     } catch (err) {
       console.error(err);
-      setError("Google login failed");
+      setError(err?.message || "Google login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Email login -> OTP
   const handleEmailLogin = async () => {
     if (!email || !password) return setError("Please enter both email and password");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Please enter a valid email");
+    if (!isValidEmail(email)) return setError("Please enter a valid email");
+
     setIsLoading(true);
     setError("");
 
@@ -106,20 +112,17 @@ const Login = () => {
       alert(data.message || "OTP sent to your email");
       setStep("verify");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err?.response?.data?.message || err?.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Signup -> OTP
   const handleSignup = async () => {
     if (!email || !password || !confirmPassword) return setError("Please fill in all fields");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Please enter a valid email");
+    if (!isValidEmail(email)) return setError("Please enter a valid email");
     if (password !== confirmPassword) return setError("Passwords do not match");
-    if (password.length < 8) return setError("Password must be at least 8 characters");
-    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
-      return setError("Password must contain uppercase, lowercase, and numbers");
-    }
 
     setIsLoading(true);
     setError("");
@@ -129,15 +132,17 @@ const Login = () => {
       alert(data.message || "Signup successful! OTP sent");
       setStep("verify");
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed");
+      setError(err?.response?.data?.message || err?.message || "Signup failed");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Forgot password -> send reset otp
   const handleForgotPassword = async () => {
     if (!email) return setError("Please enter your email");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError("Please enter a valid email");
+    if (!isValidEmail(email)) return setError("Please enter a valid email");
+
     setIsLoading(true);
     setError("");
 
@@ -146,7 +151,7 @@ const Login = () => {
       alert(data.message || "Reset code sent to email");
       setStep("reset-verify");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send reset code");
+      setError(err?.response?.data?.message || err?.message || "Failed to send reset code");
     } finally {
       setIsLoading(false);
     }
@@ -155,6 +160,7 @@ const Login = () => {
   const handleVerifyResetCode = async () => {
     const otp = resetCode.join("");
     if (otp.length !== 6) return setError("Please enter all 6 digits");
+
     setIsLoading(true);
     setError("");
 
@@ -162,7 +168,7 @@ const Login = () => {
       await api.post("/auth/verify-reset-otp", { email, otp });
       setStep("reset-password");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid code");
+      setError(err?.response?.data?.message || err?.message || "Invalid code");
       setResetCode(["", "", "", "", "", ""]);
       document.getElementById("reset-code-input-0")?.focus();
     } finally {
@@ -173,10 +179,7 @@ const Login = () => {
   const handleResetPassword = async () => {
     if (!newPassword || !confirmNewPassword) return setError("Please fill in all fields");
     if (newPassword !== confirmNewPassword) return setError("Passwords do not match");
-    if (newPassword.length < 8) return setError("Password must be at least 8 characters");
-    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-      return setError("Password must contain uppercase, lowercase, and numbers");
-    }
+
     setIsLoading(true);
     setError("");
 
@@ -188,12 +191,13 @@ const Login = () => {
       setResetCode(["", "", "", "", "", ""]);
       setStep("login");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to reset password");
+      setError(err?.response?.data?.message || err?.message || "Failed to reset password");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Verify OTP -> store token + user using AuthContext -> go profile
   const handleVerifyCode = async () => {
     const otp = verificationCode.join("");
     if (otp.length !== 6) return setError("Please enter all 6 digits");
@@ -204,21 +208,13 @@ const Login = () => {
     try {
       const { data } = await api.post("/auth/verify-otp", { email, otp });
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        // Put user in context if needed, though AuthContext reads from localStorage 'user'
-        // We should probably update 'user' in localStorage too if the backend returns it
-        if (data.user) {
-          localStorage.setItem("user", JSON.stringify(data.user));
-        }
-      }
+      // ✅ AuthContext.login expects (user, token)
+      login(data.user, data.token);
 
       alert(data.message || "✅ Login successful!");
-      setTimeout(() => {
-        window.location.href = "/"; // Redirect to Home instead of dashboard
-      }, 1000);
+      navigate("/profile"); // ✅ go to profile page
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid code");
+      setError(err?.response?.data?.message || err?.message || "Invalid code");
       setVerificationCode(["", "", "", "", "", ""]);
       document.getElementById("code-input-0")?.focus();
     } finally {
@@ -233,7 +229,7 @@ const Login = () => {
       await api.post("/auth/resend-otp", { email });
       alert("📧 Code resent!");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to resend code");
+      setError(err?.response?.data?.message || err?.message || "Failed to resend code");
     } finally {
       setIsLoading(false);
     }
@@ -246,14 +242,13 @@ const Login = () => {
       await api.post("/auth/resend-reset-otp", { email });
       alert("📧 New reset code sent!");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to resend code");
+      setError(err?.response?.data?.message || err?.message || "Failed to resend code");
     } finally {
       setIsLoading(false);
     }
   };
 
-  /* UI HELPERS  */
-
+  // OTP inputs helpers
   const handleVerificationCodeChange = (idx, val, isReset = false) => {
     const arr = isReset ? resetCode : verificationCode;
     const setArr = isReset ? setResetCode : setVerificationCode;
@@ -307,6 +302,7 @@ const Login = () => {
     }
   };
 
+  // Navigation helpers
   const switchToSignup = () => {
     setStep("signup");
     setError("");
@@ -356,8 +352,7 @@ const Login = () => {
     return "Sign in to continue your journey";
   };
 
-  /*  RENDER FUNCTIONS  */
-
+  // ✅ RENDER FORMS (FULLY INCLUDED)
   const renderLoginForm = () => (
     <>
       <div className="login-form-section">
@@ -914,7 +909,6 @@ const Login = () => {
     </>
   );
 
-  /*  MAIN RENDER */
   return (
     <div className="login-page">
       <div className="login-bg-effects">
@@ -959,8 +953,7 @@ const Login = () => {
               <div>
                 <p className="login-security-title">Your security is our priority</p>
                 <p className="login-security-text">
-                  We use industry-standard encryption and support 2-Step Verification to
-                  keep your account safe.
+                  We use industry-standard encryption and support 2-Step Verification to keep your account safe.
                 </p>
               </div>
             </div>

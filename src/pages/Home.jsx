@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, TrendingUp, Clock, Heart, Eye, ArrowRight, Sparkles, BookOpen, Users, Award, Star, Zap, Globe } from "lucide-react";
 import "../styles/Home.css";
+import Navbar from "../components/Navbar";
 import blogService from "../services/blogService";
 import BlogCard from "../components/BlogCard";
 
@@ -76,6 +77,8 @@ function Home() {
   ];
 
   return (
+    <>
+     <Navbar />
     <div className="home-container">
       {/* Hero Section */}
       <section className={`hero-section ${isVisible ? 'visible' : 'hidden'}`}>
@@ -321,7 +324,9 @@ function Home() {
         </div>
       </footer>
     </div>
+    </>
   );
+  
 }
 
 export default Home;

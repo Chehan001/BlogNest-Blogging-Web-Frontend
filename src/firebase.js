@@ -1,20 +1,19 @@
+// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBJvV-veV1g5cUi5AqKV-GapA7oe3yPCYQ",
-  authDomain: "blognest-11401.firebaseapp.com",
-  projectId: "blognest-11401",
-  storageBucket: "blognest-11401.firebasestorage.app",
-  messagingSenderId: "1045287226658",
-  appId: "1:1045287226658:web:d4fb550ed53d0d50f7a97b",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const storage = getStorage(app);
-
 export default app;

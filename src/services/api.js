@@ -1,16 +1,35 @@
+// src/services/api.js
 import axios from "axios";
 
+// ✅ use env if you deploy later
+// Vite env example: VITE_API_URL=http://localhost:5000/api
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL,
   withCredentials: true,
+  timeout: 15000,
 });
 
+// ✅ attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// ✅ better network error message
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (!error.response) {
+      console.error("Network error or backend down");
+      return Promise.reject({
+        message: "Backend not running (connection refused). Start server on port 5000.",
+      });
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
