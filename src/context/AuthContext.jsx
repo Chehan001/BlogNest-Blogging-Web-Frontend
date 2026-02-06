@@ -26,8 +26,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // ✅ Use this after OTP verify success
-  // login(data.user, data.token)
+  // after OTP verify success --> login
   const login = (userData, jwtToken) => {
     if (userData) {
       setUser(userData);

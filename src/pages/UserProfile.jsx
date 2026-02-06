@@ -1,4 +1,3 @@
-// src/pages/UserProfile.jsx
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -19,7 +18,7 @@ export default function UserProfile() {
   const fetchMyPosts = async () => {
     setError("");
     try {
-      const { data } = await api.get("/blogs/my"); // ✅ backend needed
+      const { data } = await api.get("/blogs/my"); 
       setPosts(data.posts || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load your posts");
@@ -30,7 +29,6 @@ export default function UserProfile() {
 
   useEffect(() => {
     fetchMyPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = () => {
@@ -48,7 +46,7 @@ export default function UserProfile() {
 
     setSaving(true);
     try {
-      const { data } = await api.post("/blogs", { title, content }); // ✅ backend needed
+      const { data } = await api.post("/blogs", { title, content }); 
       const newPost = data.post;
 
       setPosts((prev) => [newPost, ...prev]);
@@ -64,7 +62,7 @@ export default function UserProfile() {
   const handleDeletePost = async (postId) => {
     setError("");
     try {
-      await api.delete(`/blogs/${postId}`); // ✅ backend needed
+      await api.delete(`/blogs/${postId}`); 
       setPosts((prev) => prev.filter((p) => p._id !== postId));
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete post");

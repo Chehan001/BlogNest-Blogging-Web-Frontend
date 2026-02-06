@@ -1,8 +1,6 @@
-// src/services/api.js
 import axios from "axios";
 
-// ✅ use env if you deploy later
-// Vite env example: VITE_API_URL=http://localhost:5000/api
+// use to --> env (deploy later) 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const api = axios.create({
@@ -11,14 +9,14 @@ const api = axios.create({
   timeout: 15000,
 });
 
-// ✅ attach token
+// attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// ✅ better network error message
+// better network error message
 api.interceptors.response.use(
   (res) => res,
   (error) => {

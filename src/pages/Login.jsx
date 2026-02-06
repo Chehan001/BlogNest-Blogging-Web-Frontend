@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
@@ -77,7 +76,7 @@ const Login = () => {
 
   const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-  // ✅ Google login
+  // Google login
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError("");
@@ -99,7 +98,7 @@ const Login = () => {
     }
   };
 
-  // ✅ Email login -> OTP
+  // Email login -> OTP
   const handleEmailLogin = async () => {
     if (!email || !password) return setError("Please enter both email and password");
     if (!isValidEmail(email)) return setError("Please enter a valid email");
@@ -118,7 +117,7 @@ const Login = () => {
     }
   };
 
-  // ✅ Signup -> OTP
+  // Signup -> OTP
   const handleSignup = async () => {
     if (!email || !password || !confirmPassword) return setError("Please fill in all fields");
     if (!isValidEmail(email)) return setError("Please enter a valid email");
@@ -138,7 +137,7 @@ const Login = () => {
     }
   };
 
-  // ✅ Forgot password -> send reset otp
+  // Forgot password -> send reset otp
   const handleForgotPassword = async () => {
     if (!email) return setError("Please enter your email");
     if (!isValidEmail(email)) return setError("Please enter a valid email");
@@ -185,7 +184,7 @@ const Login = () => {
 
     try {
       await api.post("/auth/reset-password", { email, password: newPassword });
-      alert("✅ Password reset successful!");
+      alert("Password reset successful!");
       setNewPassword("");
       setConfirmNewPassword("");
       setResetCode(["", "", "", "", "", ""]);
@@ -197,7 +196,7 @@ const Login = () => {
     }
   };
 
-  // ✅ Verify OTP -> store token + user using AuthContext -> go profile
+  // Verify OTP -> store token + user using AuthContext -> go profile
   const handleVerifyCode = async () => {
     const otp = verificationCode.join("");
     if (otp.length !== 6) return setError("Please enter all 6 digits");
@@ -208,11 +207,11 @@ const Login = () => {
     try {
       const { data } = await api.post("/auth/verify-otp", { email, otp });
 
-      // ✅ AuthContext.login expects (user, token)
+      // AuthContext.login expects (user, token)
       login(data.user, data.token);
 
-      alert(data.message || "✅ Login successful!");
-      navigate("/profile"); // ✅ go to profile page
+      alert(data.message || "Login successful!");
+      navigate("/profile"); //  go to --> user profile page
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Invalid code");
       setVerificationCode(["", "", "", "", "", ""]);
@@ -227,7 +226,7 @@ const Login = () => {
     setError("");
     try {
       await api.post("/auth/resend-otp", { email });
-      alert("📧 Code resent!");
+      alert(" Code resent!");
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to resend code");
     } finally {
@@ -240,7 +239,7 @@ const Login = () => {
     setError("");
     try {
       await api.post("/auth/resend-reset-otp", { email });
-      alert("📧 New reset code sent!");
+      alert("New reset code sent!");
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to resend code");
     } finally {
@@ -352,7 +351,7 @@ const Login = () => {
     return "Sign in to continue your journey";
   };
 
-  // ✅ RENDER FORMS (FULLY INCLUDED)
+  //  RENDER FORMS (FULLY INCLUDED)
   const renderLoginForm = () => (
     <>
       <div className="login-form-section">
